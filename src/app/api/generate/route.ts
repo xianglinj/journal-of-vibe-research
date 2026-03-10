@@ -3,7 +3,7 @@ import { runFullPipeline } from '@/lib/pipeline';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes max for the full pipeline
+export const maxDuration = 900; // 15 minutes max for gpt-5.4-pro reasoning pipeline
 
 let isRunning = false;
 let lastGenerationTime = 0;
