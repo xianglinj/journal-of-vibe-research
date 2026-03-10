@@ -26,6 +26,9 @@ export function getAllPapers(): Paper[] {
 }
 
 export function getPaper(id: string): Paper | null {
+  // Validate paper ID format to prevent path traversal
+  if (!/^vr-\d{4}-\d{3,}$/.test(id)) return null;
+
   ensureDir();
   const filePath = path.join(DATA_DIR, `${id}.json`);
   if (!fs.existsSync(filePath)) return null;

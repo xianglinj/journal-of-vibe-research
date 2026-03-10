@@ -185,7 +185,8 @@ function renderKatex(tex: string, displayMode: boolean): string {
       ? 'my-4 text-center font-mono text-sm bg-slate-50 py-3 px-4 rounded overflow-x-auto'
       : 'font-mono text-sm bg-slate-50 px-1 rounded';
     const tag = displayMode ? 'div' : 'span';
-    return `<${tag} class="${cls}">${tex}</${tag}>`;
+    const safeTex = tex.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return `<${tag} class="${cls}">${safeTex}</${tag}>`;
   }
 }
 
@@ -208,6 +209,30 @@ function processLatex(html: string): string {
 
     return processed;
   }).join('');
+}
+
+// Allowed HTML tags in rendered output
+const ALLOWED_TAGS = new Set([
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr',
+  'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li',
+  'div', 'span', 'sup', 'sub', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  // KaTeX tags
+  'math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msub', 'msup', 'mfrac',
+  'mover', 'munder', 'msqrt', 'mspace', 'mtext', 'annotation',
+]);
+
+function sanitizeHtml(html: string): string {
+  // Remove script/style/iframe/object/embed tags and their content
+  let sanitized = html.replace(/<(script|style|iframe|object|embed|form|input|textarea|button|select|link|meta)\b[^>]*>[\s\S]*?<\/\1>/gi, '');
+  sanitized = sanitized.replace(/<(script|style|iframe|object|embed|form|input|textarea|button|select|link|meta)\b[^>]*\/?>/gi, '');
+
+  // Remove event handlers (onclick, onerror, onload, etc.)
+  sanitized = sanitized.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+
+  // Remove javascript: and data: URLs in attributes
+  sanitized = sanitized.replace(/(?:href|src|action)\s*=\s*(?:"(?:javascript|data):[^"]*"|'(?:javascript|data):[^']*')/gi, '');
+
+  return sanitized;
 }
 
 function markdownToHtml(md: string): string {
@@ -247,6 +272,9 @@ function markdownToHtml(md: string): string {
 
   // Clean up extra newlines
   html = html.replace(/\n{3,}/g, '\n\n');
+
+  // Sanitize to remove dangerous HTML
+  html = sanitizeHtml(html);
 
   return html;
 }
